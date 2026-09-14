@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="1280" viewBox="0 -140 1280 1280">
+  <title>Invitation heart — text treatment one</title>
+  <desc>Transparent, layered two-ink artwork based closely on the hand-drawn I Love Lucy title-card heart.</desc>
+
+  <!-- Transparent outside the heart. This group is the BLACK printing plate. -->
+  <g id="plate-black-heart" fill="#000000">
+    <path id="heart" d="M640 938
+      C547 867 425 793 322 711
+      C169 590 72 454 66 309
+      C60 174 139 76 263 45
+      C385 15 504 62 640 198
+      C776 62 895 15 1017 45
+      C1141 76 1220 174 1214 309
+      C1208 454 1111 590 958 711
+      C855 793 733 867 640 938 Z"/>
+  </g>
+
+  <!-- This group is the RED printing plate. Change the color once here. -->
+  <g id="plate-red" fill="#EA0D01" stroke="#EA0D01">
+    <path id="thin-heart-outline" fill="none" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"
+      d="M640 914
+      C548 845 438 778 338 699
+      C190 582 94 449 89 312
+      C84 190 154 101 269 72
+      C381 44 496 91 640 229
+      C784 91 899 44 1011 72
+      C1126 101 1196 190 1191 312
+      C1186 449 1090 582 942 699
+      C842 778 732 845 640 914 Z"/>
+
+    <g id="invitation-lettering" transform="rotate(-7 640 505)" stroke="none"
+       font-family="'Brush Script MT', 'Brush Script', cursive">
+      <!-- Custom reference-derived capital I: tall open loop, descending stem and separate low swash. -->
+      <g id="custom-capital-I" fill="none" stroke="#EA0D01" stroke-width="19"
+         stroke-linecap="round" stroke-linejoin="round">
+        <path d="M286 402 C267 353 268 277 293 235 C306 213 326 220 329 254 C334 310 318 368 296 413 C279 448 260 472 244 481"/>
+        <path d="M244 481 C218 500 221 523 250 525 C287 528 326 508 349 481"/>
+      </g>
+      <text x="350" y="420" font-size="111">request the pleasure</text>
+      <text x="337" y="557" font-size="125">of your company</text>
+      <text x="528" y="710" font-size="163">at...</text>
+    </g>
+  </g>
+</svg>

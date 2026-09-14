@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="1280" viewBox="0 -140 1280 1280">
+  <title>Invitation heart — Love, Lincoln text treatment</title>
+  <desc>Transparent, layered two-ink artwork based closely on the hand-drawn I Love Lucy title-card heart.</desc>
+
+  <!-- Transparent outside the heart. This group is the BLACK printing plate. -->
+  <g id="plate-black-heart" fill="#000000">
+    <path id="heart" d="M640 938
+      C547 867 425 793 322 711
+      C169 590 72 454 66 309
+      C60 174 139 76 263 45
+      C385 15 504 62 640 198
+      C776 62 895 15 1017 45
+      C1141 76 1220 174 1214 309
+      C1208 454 1111 590 958 711
+      C855 793 733 867 640 938 Z"/>
+  </g>
+
+  <!-- This group is the RED printing plate. Change the color once here. -->
+  <g id="plate-red" fill="#EA0D01" stroke="#EA0D01">
+    <path id="thin-heart-outline" fill="none" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"
+      d="M640 914
+      C548 845 438 778 338 699
+      C190 582 94 449 89 312
+      C84 190 154 101 269 72
+      C381 44 496 91 640 229
+      C784 91 899 44 1011 72
+      C1126 101 1196 190 1191 312
+      C1186 449 1090 582 942 699
+      C842 778 732 845 640 914 Z"/>
+
+    <g id="love-lincoln-lettering" transform="rotate(-7 640 515)" stroke="none"
+       font-family="'Brush Script MT', 'Brush Script', cursive">
+      <!-- Quotation marks use the same narrow hand-drawn double strokes as the reference. -->
+      <g id="opening-quote" fill="none" stroke="#EA0D01" stroke-width="10" stroke-linecap="round">
+        <path d="M210 303 L195 266"/><path d="M230 299 L216 260"/>
+      </g>
+
+      <!-- Custom reference-derived L for Love: high narrow loop, heavy downstroke, long crossbar and low oval. -->
+      <g id="custom-L-love" fill="none" stroke="#EA0D01" stroke-linecap="round" stroke-linejoin="round">
+        <path stroke-width="21" d="M405 449 C421 414 432 363 434 309 C436 250 424 215 406 226 C384 240 384 311 395 364 C406 414 395 470 364 504 C344 526 321 525 317 506 C312 484 340 455 379 449 C422 443 467 448 493 449"/>
+      </g>
+      <text id="love-lowercase" x="465" y="451" font-size="236">ove,</text>
+
+      <!-- The second custom L repeats the exact construction at a larger scale, as in Lucy. -->
+      <g id="custom-L-lincoln" transform="translate(74 -78) scale(.9)" fill="none" stroke="#EA0D01" stroke-linecap="round" stroke-linejoin="round">
+        <path stroke-width="23" d="M342 708 C363 665 376 602 378 538 C380 468 365 429 344 442 C317 459 319 542 331 604 C343 662 328 728 292 767 C268 793 240 791 236 768 C230 742 262 708 310 701 C361 694 413 701 446 702"/>
+      </g>
+      <text id="lincoln-lowercase" x="447" y="638" font-size="202">incoln</text>
+
+      <g id="closing-quote" fill="none" stroke="#EA0D01" stroke-width="10" stroke-linecap="round">
+        <path d="M1013 574 L1028 611"/><path d="M1034 570 L1049 607"/>
+      </g>
+    </g>
+  </g>
+</svg>
