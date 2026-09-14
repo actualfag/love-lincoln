@@ -154,10 +154,10 @@ function makeInviteWriteOnTexture() {
   // pass, nothing here needs a raster fallback: the whole phrase is real glyphs, one continuous
   // "I request the" / "pleasure of your" / "company" / "at..." reveal, letter by letter.
   const ROWS: { text: string; x: number; y: number; size: number }[] = [
-    { text: "I request the", x: 164, y: 520, size: 125 },
-    { text: "pleasure of your", x: 390, y: 640, size: 115 },
-    { text: "company", x: 495, y: 780, size: 110 },
-    { text: "at...", x: 610, y: 850, size: 140 },
+    { text: "I request the", x: 170, y: 430, size: 160 },
+    { text: "pleasure of your", x: 158, y: 582, size: 135 },
+    { text: "company", x: 420, y: 710, size: 150 },
+    { text: "at...", x: 446, y: 853, size: 185 },
   ];
   const STAGES = { r0: [0, .30], r1: [.30, .62], r2: [.62, .8], r3: [.8, 1] };
   const stageT = (t: number, [a, b]: number[]) => Math.max(0, Math.min(1, (t - a) / (b - a)));
