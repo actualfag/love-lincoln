@@ -153,11 +153,16 @@ function makeInviteWriteOnTexture() {
   // by overlaying a render directly against the approved art), so unlike the earlier Coronet
   // pass, nothing here needs a raster fallback: the whole phrase is real glyphs, one continuous
   // "I request the" / "pleasure of your" / "company" / "at..." reveal, letter by letter.
+  // Sizes/positions measured against public/fonts/LucyScript.otf's real glyph metrics
+  // (PIL getbbox with a baseline anchor, matching canvas fillText/alphabetic baseline) so the
+  // combined 4-line block's bounding box (377x461) stays under the approved reference art's
+  // measured text extent (817x488 in this same 1280-canvas coordinate space) -- see
+  // public/heart/invitation-text.png. Each row is horizontally centered on x=640 (the pivot).
   const ROWS: { text: string; x: number; y: number; size: number }[] = [
-    { text: "I request the", x: 170, y: 430, size: 160 },
-    { text: "pleasure of your", x: 158, y: 582, size: 135 },
-    { text: "company", x: 420, y: 710, size: 150 },
-    { text: "at...", x: 446, y: 853, size: 185 },
+    { text: "I request the", x: 463, y: 138, size: 149 },
+    { text: "pleasure of your", x: 496, y: 276, size: 126 },
+    { text: "company", x: 553, y: 365, size: 140 },
+    { text: "at...", x: 603, y: 480, size: 172 },
   ];
   const STAGES = { r0: [0, .30], r1: [.30, .62], r2: [.62, .8], r3: [.8, 1] };
   const stageT = (t: number, [a, b]: number[]) => Math.max(0, Math.min(1, (t - a) / (b - a)));
