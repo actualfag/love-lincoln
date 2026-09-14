@@ -7,6 +7,172 @@ import styles from "./HeartV2.module.css";
 const RED = new THREE.Color("#EA0D01");
 const WHITE = new THREE.Color("#FFFFFF");
 const BLACK = new THREE.Color("#000000");
+const INK = "#EA0D01";
+
+// Every box below is in the UNROTATED text-local frame (i.e. plain SVG-local coordinates,
+// before the -7deg group rotation and before the viewBox's y offset) -- the same frame the
+// original love-lincoln.svg lettering group is defined in.
+const SVG_Y_OFFSET = 140;
+const LETTERING_ROTATE_DEG = -7, LETTERING_PIVOT: [number, number] = [640, 515 + SVG_Y_OFFSET];
+// "Love," and "Lincoln"'s bounding boxes genuinely overlap (Lincoln's L reaches up into Love's
+// row), so a bounding-box wipe can never keep them as two clean, non-bleeding writing stages --
+// whichever box is drawn would leak into the other's territory wherever they overlap. The actual
+// fix: public/heart/love-word-mask.png and lincoln-word-mask.png are pre-split, pixel-exact
+// masks (built once via connected-component analysis of the source art, verified to have zero
+// overlapping pixels and to fully cover the original ink between the four of them). Each mask
+// contains ONLY that word's own ink and is fully transparent everywhere else, so revealing a
+// generous box from each mask can never show so much as one pixel of the other word early.
+const LOVE_BOX: [number, number, number, number] = [220, 290, 765, 700];
+const LINCOLN_BOX: [number, number, number, number] = [375, 280, 1120, 975];
+// The invitation side's lettering group carries the same -7deg rotation but its own pivot
+// (public/heart/invitation.svg: rotate(-7 640 505), vs. love-lincoln.svg's 640 515).
+const INVITE_PIVOT: [number, number] = [640, 505 + SVG_Y_OFFSET];
+// All of "I request the / pleasure of your / company / at..." renders as real LucyScript
+// glyphs (see below), revealed letter by letter -- including the capital "I", once LucyScript
+// turned out to match it (earlier, with only Coronet available, the "I" needed a raster
+// fallback since Coronet's own "I" didn't match and the real "I" is fused to "pleas" in the
+// source art with no way to isolate it as pixels alone).
+
+function rotatePt(px: number, py: number, cx: number, cy: number, deg: number): [number, number] {
+  const rad = deg * Math.PI / 180, cos = Math.cos(rad), sin = Math.sin(rad), dx = px - cx, dy = py - cy;
+  return [cx + dx * cos - dy * sin, cy + dx * sin + dy * cos];
+}
+
+function boxCorners(box: [number, number, number, number], pivot: [number, number] = LETTERING_PIVOT): [number, number][] {
+  const [x0, y0, x1, y1] = box;
+  return [[x0, y0], [x1, y0], [x1, y1], [x0, y1]]
+    .map(([px, py]) => rotatePt(px, py, pivot[0], pivot[1], LETTERING_ROTATE_DEG));
+}
+
+function tracePolygon(ctx: CanvasRenderingContext2D, corners: [number, number][]) {
+  ctx.moveTo(corners[0][0], corners[0][1]);
+  for (let i = 1; i < corners.length; i++) ctx.lineTo(corners[i][0], corners[i][1]);
+  ctx.closePath();
+}
+
+// Reveals a region of ONE word/line's isolated ink mask by clipping to a rectangle that grows
+// along the same -7deg tilt as the lettering itself (defined in the untilted frame, then rotated
+// into final image space) -- so the reveal follows the script's own slant rather than cutting
+// across it. Because `img` here is a mask containing ONLY that group's pixels (transparent
+// elsewhere), this can never leak a stroke belonging to a different word/line, no matter how
+// generous `box` is.
+function tiltedReveal(ctx: CanvasRenderingContext2D, img: HTMLImageElement, box: [number, number, number, number], t: number, pivot: [number, number] = LETTERING_PIVOT) {
+  if (t <= 0 || !img.complete || img.naturalWidth === 0) return;
+  const [x0, y0, x1, y1] = box;
+  const revealX = x0 + (x1 - x0) * Math.min(1, t);
+  if (revealX <= x0) return;
+  ctx.save();
+  ctx.beginPath();
+  tracePolygon(ctx, boxCorners([x0, y0, revealX, y1], pivot));
+  ctx.clip();
+  ctx.drawImage(img, 0, 0, 1280, 1280, 0, 0, 1280, 1280);
+  ctx.restore();
+}
+
+function loadImg(src: string) { const img = new Image(); img.src = src; return img; }
+
+function makeLoveWriteOnTexture() {
+  const canvas = document.createElement("canvas");
+  canvas.width = 1280; canvas.height = 1280;
+  const ctx = canvas.getContext("2d")!;
+  const loveImg = loadImg("/heart/love-word-mask.png");
+  const lincolnImg = loadImg("/heart/lincoln-word-mask.png");
+  const openQImg = loadImg("/heart/open-quote-mask.png");
+  const closeQImg = loadImg("/heart/close-quote-mask.png");
+  // Writing order, matching the reference video: "Love," completes fully, then "Lincoln", then
+  // both quotation marks fade in together.
+  const STAGES = { love: [0, .42], lincoln: [.42, .86], quotes: [.86, 1] };
+  const stageT = (t: number, [a, b]: number[]) => Math.max(0, Math.min(1, (t - a) / (b - a)));
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace; texture.minFilter = THREE.LinearFilter;
+  function draw(t: number) {
+    ctx.clearRect(0, 0, 1280, 1280);
+    tiltedReveal(ctx, loveImg, LOVE_BOX, stageT(t, STAGES.love));
+    tiltedReveal(ctx, lincolnImg, LINCOLN_BOX, stageT(t, STAGES.lincoln));
+    const qt = stageT(t, STAGES.quotes);
+    if (qt > 0) {
+      ctx.save(); ctx.globalAlpha = qt;
+      ctx.drawImage(openQImg, 0, 0, 1280, 1280, 0, 0, 1280, 1280);
+      ctx.drawImage(closeQImg, 0, 0, 1280, 1280, 0, 0, 1280, 1280);
+      ctx.restore();
+    }
+  }
+  draw(0);
+  return { texture, draw };
+}
+
+// LucyScript -- a fan-recreation of the actual I Love Lucy title-card lettering. Verified (by
+// directly overlaying a render against the approved art) to closely match every letter,
+// including the hand-modified capital "I" that the stock Coronet typeface did not match.
+// Loaded once and reused.
+let lucyScriptReady = false;
+const lucyScriptFace = typeof FontFace !== "undefined" ? new FontFace("LucyScript", "url(/fonts/LucyScript.otf)") : null;
+const lucyScriptLoadPromise = lucyScriptFace?.load().then(f => { document.fonts.add(f); lucyScriptReady = true; }).catch(() => {});
+
+// Returns the pixel width, at the current ctx.font, that should be revealed for a t in [0,1] --
+// interpolating smoothly between whole characters (not whole words), which is what makes this a
+// letter-by-letter reveal rather than a word-by-word one.
+function charRevealWidth(ctx: CanvasRenderingContext2D, text: string, t: number): number {
+  const target = t * text.length;
+  const i = Math.min(text.length, Math.floor(target)), frac = target - i;
+  const baseW = ctx.measureText(text.slice(0, i)).width;
+  if (i >= text.length) return baseW;
+  const withNextW = ctx.measureText(text.slice(0, i + 1)).width;
+  return baseW + (withNextW - baseW) * frac;
+}
+
+// Draws one line of real glyphs, revealed left to right one character at a time (via a growing
+// clip sized from actual measured character widths), in the same -7deg tilted frame as the rest
+// of the lettering -- this is what gives individual letters appearing in sequence, rather than a
+// whole pre-rendered word sliding into view at once.
+function charReveal(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, fontPx: number, fontFamily: string, ready: boolean, pivot: [number, number], t: number) {
+  if (t <= 0 || !ready) return;
+  ctx.save();
+  ctx.translate(pivot[0], pivot[1]);
+  ctx.rotate(LETTERING_ROTATE_DEG * Math.PI / 180);
+  ctx.translate(-pivot[0], -pivot[1]);
+  ctx.font = `${fontPx}px ${fontFamily}`;
+  ctx.textBaseline = "alphabetic";
+  const w = charRevealWidth(ctx, text, Math.min(1, t));
+  if (w > 0) {
+    ctx.beginPath();
+    ctx.rect(x - 6, y - fontPx * 1.35, w + 12, fontPx * 1.9);
+    ctx.clip();
+    ctx.fillStyle = INK;
+    ctx.fillText(text, x, y);
+  }
+  ctx.restore();
+}
+
+function makeInviteWriteOnTexture() {
+  const canvas = document.createElement("canvas");
+  canvas.width = 1280; canvas.height = 1280;
+  const ctx = canvas.getContext("2d")!;
+  // LucyScript -- a fan-recreation of the actual I Love Lucy title-card lettering -- turned out
+  // to be a very close match for BOTH the regular letters and the custom capital "I" (verified
+  // by overlaying a render directly against the approved art), so unlike the earlier Coronet
+  // pass, nothing here needs a raster fallback: the whole phrase is real glyphs, one continuous
+  // "I request the" / "pleasure of your" / "company" / "at..." reveal, letter by letter.
+  const ROWS: { text: string; x: number; y: number; size: number }[] = [
+    { text: "I request the", x: 164, y: 520, size: 125 },
+    { text: "pleasure of your", x: 390, y: 640, size: 115 },
+    { text: "company", x: 495, y: 780, size: 110 },
+    { text: "at...", x: 610, y: 850, size: 140 },
+  ];
+  const STAGES = { r0: [0, .30], r1: [.30, .62], r2: [.62, .8], r3: [.8, 1] };
+  const stageT = (t: number, [a, b]: number[]) => Math.max(0, Math.min(1, (t - a) / (b - a)));
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace; texture.minFilter = THREE.LinearFilter;
+  let lastT = -1;
+  function draw(t: number) {
+    lastT = t;
+    ctx.clearRect(0, 0, 1280, 1280);
+    ROWS.forEach((r, i) => charReveal(ctx, r.text, r.x, r.y, r.size, "LucyScript", lucyScriptReady, INVITE_PIVOT, stageT(t, STAGES[`r${i}` as keyof typeof STAGES])));
+  }
+  draw(0);
+  lucyScriptLoadPromise?.then(() => draw(lastT));
+  return { texture, draw };
+}
 
 type P=[number,number];
 const HEART_CURVES:[P,P,P,P][]=([
@@ -217,8 +383,10 @@ function decalMaterial(url:string){
 }
 
 export default function HeartV2({mode="points"}:{mode?:"points"|"surface"}){
-  const mount=useRef<HTMLDivElement>(null), playing=useRef(true), speedRef=useRef(12), angleRef=useRef(0);
-  const [isPlaying,setPlaying]=useState(true),[angle,setAngle]=useState(0),[density,setDensity]=useState(1.1),[white,setWhite]=useState(1);
+  // Starts showing the back face ("I request...") first -- angle 180 is where that decal faces
+  // the camera -- then turns through to "Love, Lincoln" (angle 0/360) as the second face.
+  const mount=useRef<HTMLDivElement>(null), playing=useRef(true), speedRef=useRef(12), angleRef=useRef(180);
+  const [isPlaying,setPlaying]=useState(true),[angle,setAngle]=useState(180),[density,setDensity]=useState(1.1),[white,setWhite]=useState(1);
   const uniforms=useRef({redDensity:{value:1.1},whiteAmount:{value:1}});
   useEffect(()=>{playing.current=isPlaying},[isPlaying]); useEffect(()=>{uniforms.current.redDensity.value=density},[density]); useEffect(()=>{uniforms.current.whiteAmount.value=white},[white]);
   useEffect(()=>{
@@ -237,8 +405,10 @@ export default function HeartV2({mode="points"}:{mode?:"points"|"surface"}){
       const shoulderTaper=1-.055*Math.max(0,(Math.abs(x)-1.15)/1.3);
       return .96*Math.pow(Math.max(0,1-Math.pow(q,1.68)),.53)*shoulderTaper;
     }
-    function addDecal(url:string,back=false){
-      const tex=loader.load(url); tex.colorSpace=THREE.SRGBColorSpace; tex.minFilter=THREE.LinearFilter;
+    function addDecal(src:string|THREE.Texture,back=false){
+      let tex:THREE.Texture;
+      if(typeof src==="string"){tex=loader.load(src); tex.colorSpace=THREE.SRGBColorSpace; tex.minFilter=THREE.LinearFilter;}
+      else tex=src;
       const geo=new THREE.PlaneGeometry(4.76,4.34,72,72);
       const pos=geo.getAttribute("position") as THREE.BufferAttribute;
       const normals=new Float32Array(pos.count*3);
@@ -266,7 +436,8 @@ export default function HeartV2({mode="points"}:{mode?:"points"|"surface"}){
       const dm=new THREE.ShaderMaterial({uniforms:{map:{value:tex}},transparent:true,depthWrite:false,depthTest:true,side:THREE.DoubleSide,vertexShader:`attribute vec3 vnormal;varying vec2 vUv;varying float vFacing;void main(){vUv=uv;vFacing=normalize(normalMatrix*vnormal).z;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,fragmentShader:`uniform sampler2D map;varying vec2 vUv;varying float vFacing;void main(){if(vFacing<.04)discard;vec4 t=texture2D(map,vUv);float ink=max(t.r,max(t.g,t.b));if(t.a<.2||ink<.16)discard;gl_FragColor=vec4(0.917647,0.050980,0.003922,1.);}`});
       const mesh=new THREE.Mesh(geo,dm); group.add(mesh);
     }
-    addDecal("/heart/love-text.png"); addDecal("/heart/invitation-text.png",true);
+    const inviteWriteOn=makeInviteWriteOnTexture();
+    addDecal("/heart/love-text.png"); addDecal(inviteWriteOn.texture,true);
     let resizeFrame=0;
     const resize=()=>{
       cancelAnimationFrame(resizeFrame);
@@ -285,7 +456,16 @@ export default function HeartV2({mode="points"}:{mode?:"points"|"surface"}){
     const settleResize=window.setTimeout(resize,150);
     window.addEventListener("resize",resize,{passive:true});
     let previous=performance.now(),raf=0,lastUi=0;
-    const draw=(now:number)=>{const dt=(now-previous)/1000;previous=now;if(playing.current)angleRef.current=(angleRef.current+speedRef.current*dt)%360;group.rotation.y=THREE.MathUtils.degToRad(-angleRef.current);renderer.render(scene,camera);if(now-lastUi>80){setAngle(Math.round(angleRef.current));lastUi=now}raf=requestAnimationFrame(draw)};raf=requestAnimationFrame(draw);
+    // "Love, Lincoln" is now a static decal (no write-on). Only the "I request..." face writes
+    // on, timed the same way Love/Lincoln's was: progress tracks rotation angle (not wall-clock
+    // time), starts 70deg before that face is head-on at 180, finishes exactly head-on, and
+    // replays every lap (including when scrubbed via the angle slider).
+    const WRITE_START_DEG=20, WRITE_SPAN_DEG=180-WRITE_START_DEG; let lastWriteT=-1;
+    const draw=(now:number)=>{const dt=(now-previous)/1000;previous=now;if(playing.current)angleRef.current=(angleRef.current+speedRef.current*dt)%360;group.rotation.y=THREE.MathUtils.degToRad(-angleRef.current);
+      const phase=(((angleRef.current-WRITE_START_DEG)%360)+360)%360;
+      const writeT=Math.min(1,phase/WRITE_SPAN_DEG);
+      if(writeT!==lastWriteT){inviteWriteOn.draw(writeT); inviteWriteOn.texture.needsUpdate=true; lastWriteT=writeT;}
+      renderer.render(scene,camera);if(now-lastUi>80){setAngle(Math.round(angleRef.current));lastUi=now}raf=requestAnimationFrame(draw)};raf=requestAnimationFrame(draw);
     return()=>{cancelAnimationFrame(raf);cancelAnimationFrame(resizeFrame);window.clearTimeout(settleResize);window.removeEventListener("resize",resize);renderer.dispose();heartGeometry.dispose();heartMaterial.dispose();pointMaterial?.dispose();host.removeChild(renderer.domElement)};
   },[mode]);
   const scrub=(next:number)=>{playing.current=false;setPlaying(false);angleRef.current=next;setAngle(next)};
