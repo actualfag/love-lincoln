@@ -20,14 +20,15 @@
 .info {
   flex: 0 0 auto;
   text-align: center;
-  padding: 2px 16px 0;
+  padding: 0 16px;
+  margin-top: -22px;
 }
 
 .date {
   margin: 0;
   font-family: "LucyScript", cursive;
   color: #EA0D01;
-  font-size: clamp(26px, 8vw, 40px);
+  font-size: clamp(32px, 10vw, 50px);
   line-height: 1;
 }
 
@@ -36,7 +37,7 @@
   font-family: ui-monospace, "Courier New", Courier, monospace;
   font-weight: 700;
   color: #EA0D01;
-  font-size: clamp(11px, 3.4vw, 14px);
+  font-size: clamp(13px, 4vw, 17px);
   letter-spacing: 0.22em;
   text-transform: uppercase;
 }
