@@ -18,7 +18,7 @@ export default function LinkPage() {
   return (
     <main className={styles.page}>
       <div className={styles.heartWrap}>
-        <HeartV2 showControls={false} embedded />
+        <HeartV2 showControls={false} embedded scale={0.84} />
       </div>
       <div className={styles.info}>
         <img className={styles.dateImg} src="/heart/january-15-18.png" alt="January 15–18, Poconos, PA" />
@@ -26,16 +26,19 @@ export default function LinkPage() {
       {submitted ? (
         <p className={styles.confirm}>Check your email for your link.</p>
       ) : (
-        <form className={styles.form} onSubmit={submit}>
-          <input
-            type="email"
-            required
-            placeholder="Enter your email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          <button type="submit">Get my link</button>
-        </form>
+        <div className={styles.emailBlock}>
+          <p className={styles.formLabel}>Get your link</p>
+          <form className={styles.form} onSubmit={submit}>
+            <input
+              type="email"
+              required
+              placeholder="Enter your email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+            <button type="submit">Submit</button>
+          </form>
+        </div>
       )}
     </main>
   );

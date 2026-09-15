@@ -318,7 +318,7 @@ function decalMaterial(url:string){
   return new THREE.ShaderMaterial({transparent:true,depthWrite:false,side:THREE.FrontSide,uniforms:{map:{value:tex}},vertexShader:`varying vec2 vUv; void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,fragmentShader:`uniform sampler2D map; varying vec2 vUv; void main(){vec4 t=texture2D(map,vUv);if(max(max(t.r,t.g),t.b)<.16 && t.a<.5)discard;float ink=max(t.r,max(t.g,t.b));if(ink<.18)discard;gl_FragColor=vec4(0.917647,0.050980,0.003922,1.);}`});
 }
 
-export default function HeartV2({mode="points",showControls=true,embedded=false}:{mode?:"points"|"surface";showControls?:boolean;embedded?:boolean}){
+export default function HeartV2({mode="points",showControls=true,embedded=false,scale=0.56}:{mode?:"points"|"surface";showControls?:boolean;embedded?:boolean;scale?:number}){
   // Starts showing the back face ("I request...") first -- angle 180 is where that decal faces
   // the camera -- then turns through to "Love, Lincoln" (angle 0/360) as the second face.
   const mount=useRef<HTMLDivElement>(null), playing=useRef(true), speedRef=useRef(17), angleRef=useRef(180);
@@ -329,7 +329,7 @@ export default function HeartV2({mode="points",showControls=true,embedded=false}
     const host=mount.current!; const scene=new THREE.Scene(); scene.background=BLACK;
     const camera=new THREE.PerspectiveCamera(28,1,.1,100); camera.position.set(0,0,15.3);
     const renderer=new THREE.WebGLRenderer({antialias:false,alpha:false,preserveDrawingBuffer:true}); renderer.setPixelRatio(Math.min(devicePixelRatio,2)); renderer.outputColorSpace=THREE.SRGBColorSpace; renderer.domElement.className=styles.canvas; host.appendChild(renderer.domElement);
-    const group=new THREE.Group(); group.scale.setScalar(.56); group.position.set(0,0,0); scene.add(group);
+    const group=new THREE.Group(); group.scale.setScalar(scale); group.position.set(0,0,0); scene.add(group);
     const heartGeometry=makeHeart();
     const heartMaterial=mode==="surface"?new THREE.ShaderMaterial({vertexShader:surfaceVertex,fragmentShader:surfaceFragment,uniforms:uniforms.current,side:THREE.DoubleSide,transparent:false}):new THREE.MeshBasicMaterial({color:BLACK,side:THREE.DoubleSide,depthWrite:true});
     group.add(new THREE.Mesh(heartGeometry,heartMaterial));
@@ -394,7 +394,7 @@ export default function HeartV2({mode="points",showControls=true,embedded=false}
     const draw=(now:number)=>{const dt=(now-previous)/1000;previous=now;if(playing.current)angleRef.current=(angleRef.current+speedRef.current*dt)%360;group.rotation.y=THREE.MathUtils.degToRad(-angleRef.current);
       renderer.render(scene,camera);if(now-lastUi>80){setAngle(Math.round(angleRef.current));lastUi=now}raf=requestAnimationFrame(draw)};raf=requestAnimationFrame(draw);
     return()=>{cancelAnimationFrame(raf);cancelAnimationFrame(resizeFrame);window.clearTimeout(settleResize);window.removeEventListener("resize",resize);renderer.dispose();heartGeometry.dispose();heartMaterial.dispose();pointMaterial?.dispose();host.removeChild(renderer.domElement)};
-  },[mode]);
+  },[mode,scale]);
   const scrub=(next:number)=>{playing.current=false;setPlaying(false);angleRef.current=next;setAngle(next)};
   return <main className={`${styles.page}${embedded?" "+styles.embedded:""}`}><section className={styles.stage} ref={mount}>{!embedded&&<span className={styles.tag}>continuous surface study · exact 3-color output</span>}</section>{showControls&&<div className={styles.controls}><button onClick={()=>setPlaying(v=>!v)}>{isPlaying?"Pause":"Play"}</button><label>Angle<input type="range" min="0" max="360" step="1" value={angle} onChange={e=>scrub(+e.target.value)}/></label><label>Speed<input type="range" min="3" max="30" defaultValue="17" onChange={e=>speedRef.current=+e.target.value}/></label><label>Red density<input type="range" min="0" max="2" step=".025" value={density} onChange={e=>setDensity(+e.target.value)}/></label><label>White<input type="range" min="0" max="2" step=".05" value={white} onChange={e=>setWhite(+e.target.value)}/></label><span className={styles.angle}>{angle}°</span></div>}</main>;
 }
