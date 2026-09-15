@@ -21,8 +21,7 @@ export default function LinkPage() {
         <HeartV2 showControls={false} embedded />
       </div>
       <div className={styles.info}>
-        <p className={styles.date}>January 15–18</p>
-        <p className={styles.location}>Poconos, PA</p>
+        <img className={styles.dateImg} src="/heart/january-15-18.png" alt="January 15–18, Poconos, PA" />
       </div>
       {submitted ? (
         <p className={styles.confirm}>Check your email for your link.</p>
