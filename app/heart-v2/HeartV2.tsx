@@ -224,11 +224,13 @@ void main(){
   vec3 R0=normalize(vec3(0.549,-0.411,0.7276));
   vec3 R2=normalize(vec3(-0.60,0.55,0.58));
   vec3 R3=normalize(vec3(0.2569,0.02,0.8180));
-  // Stretch the two round top highlights into ovals along the lobe's diagonal curve (matching
-  // the reference art) by shrinking the perpendicular axis's contribution to the alignment dot
-  // product -- iso-alignment contours widen into ellipses along AXIS instead of staying circular.
-  vec2 L0_AXIS=normalize(vec2(1.0,-0.6)); vec2 L0_PERP=vec2(-L0_AXIS.y,L0_AXIS.x);
-  vec2 L2_AXIS=normalize(vec2(-1.0,-0.6)); vec2 L2_PERP=vec2(-L2_AXIS.y,L2_AXIS.x);
+  // Stretch the two round top highlights into ovals by shrinking the contribution of the axis
+  // PERPENDICULAR to each light's own tangential direction -- deriving AXIS from R.xy itself
+  // (rather than an arbitrary picked direction) guarantees dot(R,R)'s own perp component is
+  // exactly zero, so the peak brightness at true alignment is mathematically unchanged; only
+  // off-peak normals (which is what gives the highlight its shape) are affected.
+  vec2 L0_AXIS=normalize(R0.xy); vec2 L0_PERP=vec2(-L0_AXIS.y,L0_AXIS.x);
+  vec2 L2_AXIS=normalize(R2.xy); vec2 L2_PERP=vec2(-L2_AXIS.y,L2_AXIS.x);
   float aL0=dot(Nf.xy,L0_AXIS)*dot(R0.xy,L0_AXIS)+0.4*dot(Nf.xy,L0_PERP)*dot(R0.xy,L0_PERP)+Nf.z*R0.z;
   float aL2=dot(Nf.xy,L2_AXIS)*dot(R2.xy,L2_AXIS)+0.4*dot(Nf.xy,L2_PERP)*dot(R2.xy,L2_PERP)+Nf.z*R2.z;
   // max(), not sum, across lights: each patch of red visibly belongs to and traces the falloff
@@ -271,10 +273,10 @@ void main(){
   // claim -- so it is near-zero at the very core (white owns that), rises to its densest,
   // "stark red" as white fades out, then fades toward black as illumination keeps dropping.
   // That single (1-whiteChance) factor is what makes it a hump instead of a flat wash.
-  // A real floor (not a straight multiply from illum=0) so the baseline illum everywhere on the
-  // face doesn't sprinkle a uniform low-level red dusting -- only areas actually catching some
-  // real light cross the threshold, leaving unlit areas (including around the text) solid black.
-  float redChance=clamp(smoothstep(.015,.34,illum)*(1.0-whiteChance)*redDensity*clump,0.,.95);
+  // A real floor (not a straight multiply from illum=0) so flat-facing areas (the .006 baseline)
+  // stay solid black instead of dusting uniformly -- but the ceiling is low enough that ordinary
+  // shoulder-lit areas still pick up a general, graduated stipple that gives the dome its shape.
+  float redChance=clamp(smoothstep(.008,.11,illum)*(1.0-whiteChance)*redDensity*clump,0.,.95);
   if(vSeed<whiteChance)gl_FragColor=vec4(1.);
   else if(vSeed<whiteChance+redChance)gl_FragColor=vec4(.917647,.050980,.003922,1.);
   else discard;
@@ -293,8 +295,8 @@ float noise3s(vec3 p){
 void main(){vec3 N=normalize(vN);vec3 an=abs(N);vec2 uv=an.x>an.y&&an.x>an.z?vObject.yz:(an.y>an.z?vObject.xz:vObject.xy);uv*=92.;vec2 cell=floor(uv),f=fract(uv);vec2 jitter=vec2(hash(cell),hash(cell+19.37))*.72+.14;float dotShape=1.-smoothstep(.105,.145,length(f-jitter));float rnd=hash(cell+53.19);
 vec3 Nf=vec3(N.x,N.y,abs(N.z));
 vec3 R0=normalize(vec3(0.549,-0.411,0.7276)),R2=normalize(vec3(-0.60,0.55,0.58)),R3=normalize(vec3(0.2569,0.02,0.8180));
-vec2 L0_AXIS=normalize(vec2(1.0,-0.6)); vec2 L0_PERP=vec2(-L0_AXIS.y,L0_AXIS.x);
-vec2 L2_AXIS=normalize(vec2(-1.0,-0.6)); vec2 L2_PERP=vec2(-L2_AXIS.y,L2_AXIS.x);
+vec2 L0_AXIS=normalize(R0.xy); vec2 L0_PERP=vec2(-L0_AXIS.y,L0_AXIS.x);
+vec2 L2_AXIS=normalize(R2.xy); vec2 L2_PERP=vec2(-L2_AXIS.y,L2_AXIS.x);
 float aL0=dot(Nf.xy,L0_AXIS)*dot(R0.xy,L0_AXIS)+0.4*dot(Nf.xy,L0_PERP)*dot(R0.xy,L0_PERP)+Nf.z*R0.z;
 float aL2=dot(Nf.xy,L2_AXIS)*dot(R2.xy,L2_AXIS)+0.4*dot(Nf.xy,L2_PERP)*dot(R2.xy,L2_PERP)+Nf.z*R2.z;
 float faceMask=smoothstep(0.28,1.55,length(vObject.xy));
@@ -308,7 +310,7 @@ float illum=max(highlight,rim)+0.006;
 float radial=length(vec2(vObject.x/2.68,vObject.y/2.16));float edgeInset=1.0-smoothstep(0.70,0.98,radial);
 float clumpA=noise3s(vObject*3.1+vec3(11.,3.,7.));float clumpB=noise3s(vObject*7.4+vec3(-5.,19.,2.));float clump=mix(.85,1.15,clumpA*.7+clumpB*.3);
 float whiteLevel=clamp(smoothstep(.14,.40,illum)*edgeInset*whiteAmount,0.,.95);
-float redLevel=clamp(smoothstep(.015,.34,illum)*(1.0-whiteLevel)*redDensity*clump,0.,.95);
+float redLevel=clamp(smoothstep(.008,.11,illum)*(1.0-whiteLevel)*redDensity*clump,0.,.95);
 if(dotShape>.5&&rnd<whiteLevel)gl_FragColor=vec4(1.);else if(dotShape>.5&&rnd<whiteLevel+redLevel)gl_FragColor=vec4(.917647,.050980,.003922,1.);else gl_FragColor=vec4(0.,0.,0.,1.);}`;
 
 function decalMaterial(url:string){
