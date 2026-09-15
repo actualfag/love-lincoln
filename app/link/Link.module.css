@@ -1,0 +1,90 @@
+@font-face { font-family: "LucyScript"; src: url("/fonts/LucyScript.otf") format("opentype"); font-display: swap; }
+
+.page {
+  height: 100svh;
+  height: 100dvh;
+  background: #000;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-family: Arial, sans-serif;
+}
+
+.heartWrap {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.info {
+  flex: 0 0 auto;
+  text-align: center;
+  padding: 2px 16px 0;
+}
+
+.date {
+  margin: 0;
+  font-family: "LucyScript", cursive;
+  color: #EA0D01;
+  font-size: clamp(26px, 8vw, 40px);
+  line-height: 1;
+}
+
+.location {
+  margin: 4px 0 0;
+  font-family: ui-monospace, "Courier New", Courier, monospace;
+  font-weight: 700;
+  color: #EA0D01;
+  font-size: clamp(11px, 3.4vw, 14px);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.form {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 8px;
+  padding: 14px 16px max(14px, env(safe-area-inset-bottom));
+  max-width: 380px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.form input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 42px;
+  padding: 0 12px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 4px;
+  color: #fff;
+  font-size: 14px;
+}
+
+.form input::placeholder { color: rgba(255, 255, 255, 0.45); }
+
+.form button {
+  flex: 0 0 auto;
+  height: 42px;
+  padding: 0 16px;
+  border: 1px solid #EA0D01;
+  border-radius: 4px;
+  background: #EA0D01;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.confirm {
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 14px 16px max(14px, env(safe-area-inset-bottom));
+  text-align: center;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.75);
+}
