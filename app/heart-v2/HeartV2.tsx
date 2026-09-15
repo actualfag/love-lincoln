@@ -165,7 +165,7 @@ function makeHeart() {
     const tx=next.x-prev.x,ty=next.y-prev.y,tl=Math.hypot(tx,ty)||1;
     rawPerp.push([-ty/tl,tx/tl]);
   }
-  const SMOOTH=Math.round(segments*0.02);
+  const SMOOTH=Math.round(segments*0.045);
   const perp:[number,number][]=rawPerp.map((_,i)=>{
     let sx=0,sy=0;
     for(let k=-SMOOTH;k<=SMOOTH;k++){const idx=(i+k+segments)%segments;sx+=rawPerp[idx][0];sy+=rawPerp[idx][1];}
@@ -240,7 +240,7 @@ void main(){
   float coreMask=mix(0.4,1.0,faceMask);
   float L0=pow(max(dot(Nf,R0),0.),46.)*0.40*coreMask+pow(max(dot(Nf,R0),0.),20.)*0.07*faceMask;
   // Top-nub light: tightened further so it only touches the lobe it's already on, not the face.
-  float L2=pow(max(dot(Nf,R2),0.),72.)*0.34*coreMask+pow(max(dot(Nf,R2),0.),30.)*0.05*faceMask;
+  float L2=pow(max(dot(Nf,R2),0.),72.)*0.44*coreMask+pow(max(dot(Nf,R2),0.),30.)*0.035*faceMask;
   // Bottom bar: much higher exponent narrows it (the curved surface itself keeps it elongated
   // into a streak, so raising the exponent shrinks width without turning it back into a blob).
   float L3=pow(max(dot(Nf,R3),0.),200.)*0.46*coreMask+pow(max(dot(Nf,R3),0.),60.)*0.05*faceMask;
@@ -286,7 +286,7 @@ vec3 R0=normalize(vec3(0.549,-0.411,0.7276)),R2=normalize(vec3(-0.60,0.55,0.58))
 float faceMask=smoothstep(0.28,1.55,length(vObject.xy));
 float coreMask=mix(0.4,1.0,faceMask);
 float L0=pow(max(dot(Nf,R0),0.),46.)*0.40*coreMask+pow(max(dot(Nf,R0),0.),20.)*0.07*faceMask;
-float L2=pow(max(dot(Nf,R2),0.),72.)*0.34*coreMask+pow(max(dot(Nf,R2),0.),30.)*0.05*faceMask;
+float L2=pow(max(dot(Nf,R2),0.),72.)*0.44*coreMask+pow(max(dot(Nf,R2),0.),30.)*0.035*faceMask;
 float L3=pow(max(dot(Nf,R3),0.),200.)*0.46*coreMask+pow(max(dot(Nf,R3),0.),60.)*0.05*faceMask;
 float highlight=max(max(L0,L2),L3);
 float rim=pow(clamp(1.0-Nf.z,0.,1.),4.5)*0.05;
