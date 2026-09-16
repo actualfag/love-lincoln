@@ -16,14 +16,10 @@
 }
 
 .info {
-  flex: 1 1 auto;
-  min-height: 0;
+  flex: 0 0 auto;
   display: flex;
-  align-items: flex-start;
   justify-content: center;
-  overflow: hidden;
-  margin-top: -6vh;
-  padding: 0 16px max(16px, env(safe-area-inset-bottom));
+  padding: max(16px, env(safe-area-inset-top)) 16px 0;
 }
 
 .dateImg {
