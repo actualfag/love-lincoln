@@ -203,7 +203,7 @@ function makeStipplePoints(surface:THREE.BufferGeometry,count=310000){
 }
 const pointVertex=`varying vec3 vN;varying vec3 vWorld;varying vec3 vObject;varying float vSeed;attribute float seed;void main(){vSeed=seed;vObject=position;vN=normalize(mat3(modelMatrix)*normal);vec4 world=modelMatrix*vec4(position,1.);vWorld=world.xyz;gl_Position=projectionMatrix*viewMatrix*world;gl_PointSize=1.55;}`;
 const pointFragment=`
-precision highp float;varying vec3 vN;varying vec3 vWorld;varying vec3 vObject;varying float vSeed;uniform float redDensity;uniform float whiteAmount;uniform float rotAngle;
+precision highp float;varying vec3 vN;varying vec3 vWorld;varying vec3 vObject;varying float vSeed;uniform float redDensity;uniform float whiteAmount;uniform float rotAngle;uniform float l0Amount;uniform float l2Amount;uniform float l3Amount;uniform float l4Amount;
 float hash3(vec3 p){return fract(sin(dot(p,vec3(12.9898,78.233,45.164)))*43758.5453);}
 float noise3(vec3 p){
   vec3 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
@@ -258,9 +258,9 @@ void main(){
   // happens to sweep over the text mid-rotation, it doesn't fully wash it out -- just dims
   // through, rather than off.
   float coreMask=mix(0.4,1.0,faceMask);
-  float L0=pow(max(aL0,0.),46.)*0.40*coreMask+pow(max(aL0,0.),20.)*0.07*faceMask;
+  float L0=(pow(max(aL0,0.),46.)*0.40*coreMask+pow(max(aL0,0.),20.)*0.07*faceMask)*l0Amount;
   // Top-nub light: tightened further so it only touches the lobe it's already on, not the face.
-  float L2=pow(max(aL2,0.),72.)*0.44*coreMask+pow(max(aL2,0.),30.)*0.035*faceMask;
+  float L2=(pow(max(aL2,0.),72.)*0.44*coreMask+pow(max(aL2,0.),30.)*0.035*faceMask)*l2Amount;
   // Bottom bar: much higher exponent narrows it (the curved surface itself keeps it elongated
   // into a streak, so raising the exponent shrinks width without turning it back into a blob).
   // L3 and L4 share the same x/z direction (differ only in y), so they peak at the same rotation
@@ -272,13 +272,13 @@ void main(){
   // fades out over TWO separate windows, one per face.
   float L3raw=pow(max(dot(Nf,R3),0.),260.)*0.46*coreMask+pow(max(dot(Nf,R3),0.),75.)*0.05*faceMask;
   float L3presence=1.0-angleDip(rotAngle,122.,215.,24.)*angleDip(rotAngle,296.,40.,24.);
-  float L3=L3raw*L3presence;
+  float L3=L3raw*L3presence*l3Amount;
   // L4's original window (200-315) keeps its intensity bump at 315; the new window (25-123, the
   // opposite-face occurrence) is a plain fade with no bump.
   float L4raw=pow(max(dot(Nf,R4),0.),260.)*0.46*coreMask+pow(max(dot(Nf,R4),0.),75.)*0.05*faceMask;
   float L4dip=angleDip(rotAngle,25.,123.,12.)*angleDip(rotAngle,200.,315.,12.);
   float L4bump=0.8*min(smoothstep(315.,325.,rotAngle),1.0-smoothstep(325.,345.,rotAngle));
-  float L4=L4raw*(L4dip+L4bump);
+  float L4=L4raw*(L4dip+L4bump)*l4Amount;
   float highlight=max(max(max(L0,L2),L3),L4);
   // Fresnel-style rim: a soft, direction-independent floor near the curved edge (not summed
   // with the highlights above -- it only matters where no highlight already dominates).
@@ -308,7 +308,7 @@ void main(){
   else discard;
 }`;
 const surfaceVertex=`varying vec3 vN;varying vec3 vWorld;varying vec3 vObject;void main(){vObject=position;vN=normalize(mat3(modelMatrix)*normal);vec4 world=modelMatrix*vec4(position,1.);vWorld=world.xyz;gl_Position=projectionMatrix*viewMatrix*world;}`;
-const surfaceFragment=`precision highp float;varying vec3 vN;varying vec3 vWorld;varying vec3 vObject;uniform float redDensity;uniform float whiteAmount;uniform float rotAngle;
+const surfaceFragment=`precision highp float;varying vec3 vN;varying vec3 vWorld;varying vec3 vObject;uniform float redDensity;uniform float whiteAmount;uniform float rotAngle;uniform float l0Amount;uniform float l2Amount;uniform float l3Amount;uniform float l4Amount;
 float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453123);}
 float hash3s(vec3 p){return fract(sin(dot(p,vec3(12.9898,78.233,45.164)))*43758.5453);}
 float noise3s(vec3 p){
@@ -331,15 +331,15 @@ float aL0=dot(Nf.xy,L0_AXIS)*dot(R0.xy,L0_AXIS)+0.4*dot(Nf.xy,L0_PERP)*dot(R0.xy
 float aL2=dot(Nf.xy,L2_AXIS)*dot(R2.xy,L2_AXIS)+0.4*dot(Nf.xy,L2_PERP)*dot(R2.xy,L2_PERP)+Nf.z*R2.z;
 float faceMask=smoothstep(0.28,1.55,length(vObject.xy));
 float coreMask=mix(0.4,1.0,faceMask);
-float L0=pow(max(aL0,0.),46.)*0.40*coreMask+pow(max(aL0,0.),20.)*0.07*faceMask;
-float L2=pow(max(aL2,0.),72.)*0.44*coreMask+pow(max(aL2,0.),30.)*0.035*faceMask;
+float L0=(pow(max(aL0,0.),46.)*0.40*coreMask+pow(max(aL0,0.),20.)*0.07*faceMask)*l0Amount;
+float L2=(pow(max(aL2,0.),72.)*0.44*coreMask+pow(max(aL2,0.),30.)*0.035*faceMask)*l2Amount;
 float L3raw=pow(max(dot(Nf,R3),0.),260.)*0.46*coreMask+pow(max(dot(Nf,R3),0.),75.)*0.05*faceMask;
 float L3presence=1.0-angleDip(rotAngle,122.,215.,24.)*angleDip(rotAngle,296.,40.,24.);
-float L3=L3raw*L3presence;
+float L3=L3raw*L3presence*l3Amount;
 float L4raw=pow(max(dot(Nf,R4),0.),260.)*0.46*coreMask+pow(max(dot(Nf,R4),0.),75.)*0.05*faceMask;
 float L4dip=angleDip(rotAngle,25.,123.,12.)*angleDip(rotAngle,200.,315.,12.);
 float L4bump=0.8*min(smoothstep(315.,325.,rotAngle),1.0-smoothstep(325.,345.,rotAngle));
-float L4=L4raw*(L4dip+L4bump);
+float L4=L4raw*(L4dip+L4bump)*l4Amount;
 float highlight=max(max(max(L0,L2),L3),L4);
 float rim=pow(clamp(1.0-Nf.z,0.,1.),4.5)*0.05;
 float illum=max(highlight,rim)+0.006;
@@ -359,8 +359,10 @@ export default function HeartV2({mode="points",showControls=true,embedded=false,
   // the camera -- then turns through to "Love, Lincoln" (angle 0/360) as the second face.
   const mount=useRef<HTMLDivElement>(null), playing=useRef(true), speedRef=useRef(17), angleRef=useRef(180);
   const [isPlaying,setPlaying]=useState(true),[angle,setAngle]=useState(180),[density,setDensity]=useState(0.5),[white,setWhite]=useState(1.2);
-  const uniforms=useRef({redDensity:{value:0.5},whiteAmount:{value:1.2},rotAngle:{value:180}});
+  const [l0i,setL0i]=useState(100),[l2i,setL2i]=useState(100),[l3i,setL3i]=useState(100),[l4i,setL4i]=useState(100);
+  const uniforms=useRef({redDensity:{value:0.5},whiteAmount:{value:1.2},rotAngle:{value:180},l0Amount:{value:1},l2Amount:{value:1},l3Amount:{value:1},l4Amount:{value:1}});
   useEffect(()=>{playing.current=isPlaying},[isPlaying]); useEffect(()=>{uniforms.current.redDensity.value=density},[density]); useEffect(()=>{uniforms.current.whiteAmount.value=white},[white]);
+  useEffect(()=>{uniforms.current.l0Amount.value=l0i/100},[l0i]); useEffect(()=>{uniforms.current.l2Amount.value=l2i/100},[l2i]); useEffect(()=>{uniforms.current.l3Amount.value=l3i/100},[l3i]); useEffect(()=>{uniforms.current.l4Amount.value=l4i/100},[l4i]);
   useEffect(()=>{
     const host=mount.current!; const scene=new THREE.Scene(); scene.background=BLACK;
     const camera=new THREE.PerspectiveCamera(28,1,.1,100); camera.position.set(0,0,15.3);
@@ -433,5 +435,5 @@ export default function HeartV2({mode="points",showControls=true,embedded=false,
     return()=>{cancelAnimationFrame(raf);cancelAnimationFrame(resizeFrame);window.clearTimeout(settleResize);window.removeEventListener("resize",resize);renderer.dispose();heartGeometry.dispose();heartMaterial.dispose();pointMaterial?.dispose();host.removeChild(renderer.domElement)};
   },[mode,scale]);
   const scrub=(next:number)=>{playing.current=false;setPlaying(false);angleRef.current=next;setAngle(next)};
-  return <main className={`${styles.page}${embedded?" "+styles.embedded:""}`}><section className={styles.stage} ref={mount}>{!embedded&&<span className={styles.tag}>continuous surface study · exact 3-color output</span>}</section>{showControls&&<div className={styles.controls}><button onClick={()=>setPlaying(v=>!v)}>{isPlaying?"Pause":"Play"}</button><label>Angle<input type="range" min="0" max="360" step="1" value={angle} onChange={e=>scrub(+e.target.value)}/></label><label>Speed<input type="range" min="3" max="30" defaultValue="17" onChange={e=>speedRef.current=+e.target.value}/></label><label>Red density<input type="range" min="0" max="2" step=".025" value={density} onChange={e=>setDensity(+e.target.value)}/></label><label>White<input type="range" min="0" max="2" step=".05" value={white} onChange={e=>setWhite(+e.target.value)}/></label><span className={styles.angle}>{angle}°</span></div>}</main>;
+  return <main className={`${styles.page}${embedded?" "+styles.embedded:""}`}><section className={styles.stage} ref={mount}>{!embedded&&<span className={styles.tag}>continuous surface study · exact 3-color output</span>}</section>{showControls&&<div className={styles.controls}><button onClick={()=>setPlaying(v=>!v)}>{isPlaying?"Pause":"Play"}</button><label>Angle<input type="range" min="0" max="360" step="1" value={angle} onChange={e=>scrub(+e.target.value)}/></label><label>Speed<input type="range" min="3" max="30" defaultValue="17" onChange={e=>speedRef.current=+e.target.value}/></label><label>Red density<input type="range" min="0" max="2" step=".025" value={density} onChange={e=>setDensity(+e.target.value)}/></label><label>White<input type="range" min="0" max="2" step=".05" value={white} onChange={e=>setWhite(+e.target.value)}/></label><label>L0<input type="range" min="0" max="100" step="1" value={l0i} onChange={e=>setL0i(+e.target.value)}/></label><label>L2<input type="range" min="0" max="100" step="1" value={l2i} onChange={e=>setL2i(+e.target.value)}/></label><label>L3<input type="range" min="0" max="100" step="1" value={l3i} onChange={e=>setL3i(+e.target.value)}/></label><label>L4<input type="range" min="0" max="100" step="1" value={l4i} onChange={e=>setL4i(+e.target.value)}/></label><span className={styles.angle}>{angle}°</span></div>}</main>;
 }
