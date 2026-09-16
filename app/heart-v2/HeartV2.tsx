@@ -360,11 +360,11 @@ function decalMaterial(url:string){
   return new THREE.ShaderMaterial({transparent:true,depthWrite:false,side:THREE.FrontSide,uniforms:{map:{value:tex}},vertexShader:`varying vec2 vUv; void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,fragmentShader:`uniform sampler2D map; varying vec2 vUv; void main(){vec4 t=texture2D(map,vUv);if(max(max(t.r,t.g),t.b)<.16 && t.a<.5)discard;float ink=max(t.r,max(t.g,t.b));if(ink<.18)discard;gl_FragColor=vec4(0.917647,0.050980,0.003922,1.);}`});
 }
 
-export default function HeartV2({mode="points",showControls=true,embedded=false,scale=0.56}:{mode?:"points"|"surface";showControls?:boolean;embedded?:boolean;scale?:number}){
+export default function HeartV2({mode="points",showControls=true,embedded=false,scale=0.56,initialAngle=180}:{mode?:"points"|"surface";showControls?:boolean;embedded?:boolean;scale?:number;initialAngle?:number}){
   // Starts showing the back face ("I request...") first -- angle 180 is where that decal faces
   // the camera -- then turns through to "Love, Lincoln" (angle 0/360) as the second face.
-  const mount=useRef<HTMLDivElement>(null), playing=useRef(true), speedRef=useRef(17), angleRef=useRef(180);
-  const [isPlaying,setPlaying]=useState(true),[angle,setAngle]=useState(180),[density,setDensity]=useState(0.5),[white,setWhite]=useState(1.2);
+  const mount=useRef<HTMLDivElement>(null), playing=useRef(true), speedRef=useRef(17), angleRef=useRef(initialAngle);
+  const [isPlaying,setPlaying]=useState(true),[angle,setAngle]=useState(initialAngle),[density,setDensity]=useState(0.5),[white,setWhite]=useState(1.2);
   const [l0i,setL0i]=useState(100),[l2i,setL2i]=useState(100),[l3i,setL3i]=useState(100),[l4i,setL4i]=useState(100);
   const uniforms=useRef({redDensity:{value:0.5},whiteAmount:{value:1.2},rotAngle:{value:180},l0Amount:{value:1},l2Amount:{value:1},l3Amount:{value:1},l4Amount:{value:1}});
   useEffect(()=>{playing.current=isPlaying},[isPlaying]); useEffect(()=>{uniforms.current.redDensity.value=density},[density]); useEffect(()=>{uniforms.current.whiteAmount.value=white},[white]);

@@ -22,11 +22,12 @@
   align-items: flex-start;
   justify-content: center;
   overflow: hidden;
+  margin-top: -6vh;
   padding: 0 16px max(16px, env(safe-area-inset-bottom));
 }
 
 .dateImg {
-  max-width: min(85vw, 420px);
+  max-width: min(55vw, 240px);
   max-height: 100%;
   width: auto;
   height: auto;
