@@ -253,11 +253,17 @@ void main(){
   float coreMask=mix(0.4,1.0,faceMask);
   float L0=pow(max(aL0,0.),46.)*0.40*coreMask+pow(max(aL0,0.),20.)*0.07*faceMask;
   // Top-nub light: tightened further so it only touches the lobe it's already on, not the face.
-  float L2=pow(max(aL2,0.),72.)*0.44*coreMask+pow(max(aL2,0.),30.)*0.035*faceMask;
+  // Gated (not a straight value) so it stays fully invisible until it's almost bright enough to
+  // flash white, instead of lingering as a dim, lifeless red dot through the rest of its sweep.
+  float L2raw=pow(max(aL2,0.),72.)*0.44*coreMask+pow(max(aL2,0.),30.)*0.035*faceMask;
+  float L2=L2raw*smoothstep(0.09,0.13,L2raw);
   // Bottom bar: much higher exponent narrows it (the curved surface itself keeps it elongated
   // into a streak, so raising the exponent shrinks width without turning it back into a blob).
   float L3=pow(max(dot(Nf,R3),0.),260.)*0.46*coreMask+pow(max(dot(Nf,R3),0.),75.)*0.05*faceMask;
-  float L4=pow(max(dot(Nf,R4),0.),260.)*0.46*coreMask+pow(max(dot(Nf,R4),0.),75.)*0.05*faceMask;
+  // Notch light: same gate as L2 -- only ever seen as a proper white-cored flash, never a bare
+  // red smudge mid-sweep.
+  float L4raw=pow(max(dot(Nf,R4),0.),260.)*0.46*coreMask+pow(max(dot(Nf,R4),0.),75.)*0.05*faceMask;
+  float L4=L4raw*smoothstep(0.09,0.13,L4raw);
   float highlight=max(max(max(L0,L2),L3),L4);
   // Fresnel-style rim: a soft, direction-independent floor near the curved edge (not summed
   // with the highlights above -- it only matters where no highlight already dominates).
@@ -307,9 +313,11 @@ float aL2=dot(Nf.xy,L2_AXIS)*dot(R2.xy,L2_AXIS)+0.4*dot(Nf.xy,L2_PERP)*dot(R2.xy
 float faceMask=smoothstep(0.28,1.55,length(vObject.xy));
 float coreMask=mix(0.4,1.0,faceMask);
 float L0=pow(max(aL0,0.),46.)*0.40*coreMask+pow(max(aL0,0.),20.)*0.07*faceMask;
-float L2=pow(max(aL2,0.),72.)*0.44*coreMask+pow(max(aL2,0.),30.)*0.035*faceMask;
+float L2raw=pow(max(aL2,0.),72.)*0.44*coreMask+pow(max(aL2,0.),30.)*0.035*faceMask;
+float L2=L2raw*smoothstep(0.09,0.13,L2raw);
 float L3=pow(max(dot(Nf,R3),0.),260.)*0.46*coreMask+pow(max(dot(Nf,R3),0.),75.)*0.05*faceMask;
-float L4=pow(max(dot(Nf,R4),0.),260.)*0.46*coreMask+pow(max(dot(Nf,R4),0.),75.)*0.05*faceMask;
+float L4raw=pow(max(dot(Nf,R4),0.),260.)*0.46*coreMask+pow(max(dot(Nf,R4),0.),75.)*0.05*faceMask;
+float L4=L4raw*smoothstep(0.09,0.13,L4raw);
 float highlight=max(max(max(L0,L2),L3),L4);
 float rim=pow(clamp(1.0-Nf.z,0.,1.),4.5)*0.05;
 float illum=max(highlight,rim)+0.006;
