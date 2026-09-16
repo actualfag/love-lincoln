@@ -242,8 +242,12 @@ void main(){
   // off-peak normals (which is what gives the highlight its shape) are affected.
   vec2 L0_AXIS=normalize(R0.xy); vec2 L0_PERP=vec2(-L0_AXIS.y,L0_AXIS.x);
   vec2 L2_AXIS=normalize(R2.xy); vec2 L2_PERP=vec2(-L2_AXIS.y,L2_AXIS.x);
+  vec2 L4_AXIS=normalize(R4.xy); vec2 L4_PERP=vec2(-L4_AXIS.y,L4_AXIS.x);
   float aL0=dot(Nf.xy,L0_AXIS)*dot(R0.xy,L0_AXIS)+0.4*dot(Nf.xy,L0_PERP)*dot(R0.xy,L0_PERP)+Nf.z*R0.z;
-  float aL2=dot(Nf.xy,L2_AXIS)*dot(R2.xy,L2_AXIS)+0.4*dot(Nf.xy,L2_PERP)*dot(R2.xy,L2_PERP)+Nf.z*R2.z;
+  // L2/L4 squashed harder (0.15 vs L0's 0.4) so they read as bars rather than ovals -- brings out
+  // the heart's curve more instead of sitting as isolated round spots.
+  float aL2=dot(Nf.xy,L2_AXIS)*dot(R2.xy,L2_AXIS)+0.15*dot(Nf.xy,L2_PERP)*dot(R2.xy,L2_PERP)+Nf.z*R2.z;
+  float aL4bar=dot(Nf.xy,L4_AXIS)*dot(R4.xy,L4_AXIS)+0.15*dot(Nf.xy,L4_PERP)*dot(R4.xy,L4_PERP)+Nf.z*R4.z;
   // max(), not sum, across lights: each patch of red visibly belongs to and traces the falloff
   // of ONE dominant light rather than blurring into a flat wash. Within each light, a tight
   // "core" term (reaches white) plus a broader, much dimmer "shoulder" term (same direction,
@@ -275,7 +279,7 @@ void main(){
   float L3=L3raw*L3presence*l3Amount;
   // L4's original window (200-315) keeps its intensity bump at 315; the new window (25-123, the
   // opposite-face occurrence) is a plain fade with no bump.
-  float L4raw=pow(max(dot(Nf,R4),0.),260.)*0.46*coreMask+pow(max(dot(Nf,R4),0.),75.)*0.05*faceMask;
+  float L4raw=pow(max(aL4bar,0.),260.)*0.46*coreMask+pow(max(aL4bar,0.),75.)*0.05*faceMask;
   float L4dip=angleDip(rotAngle,25.,123.,12.)*angleDip(rotAngle,200.,315.,12.);
   float L4bump=0.8*min(smoothstep(315.,325.,rotAngle),1.0-smoothstep(325.,345.,rotAngle));
   float L4=L4raw*(L4dip+L4bump)*l4Amount;
@@ -327,8 +331,10 @@ vec3 Nf=vec3(N.x,N.y,abs(N.z));
 vec3 R0=normalize(vec3(0.549,-0.411,0.7276)),R2=normalize(vec3(-0.60,0.55,0.58)),R3=normalize(vec3(0.2569,0.02,0.8180)),R4=normalize(vec3(0.2569,0.5150,0.8180));
 vec2 L0_AXIS=normalize(R0.xy); vec2 L0_PERP=vec2(-L0_AXIS.y,L0_AXIS.x);
 vec2 L2_AXIS=normalize(R2.xy); vec2 L2_PERP=vec2(-L2_AXIS.y,L2_AXIS.x);
+vec2 L4_AXIS=normalize(R4.xy); vec2 L4_PERP=vec2(-L4_AXIS.y,L4_AXIS.x);
 float aL0=dot(Nf.xy,L0_AXIS)*dot(R0.xy,L0_AXIS)+0.4*dot(Nf.xy,L0_PERP)*dot(R0.xy,L0_PERP)+Nf.z*R0.z;
-float aL2=dot(Nf.xy,L2_AXIS)*dot(R2.xy,L2_AXIS)+0.4*dot(Nf.xy,L2_PERP)*dot(R2.xy,L2_PERP)+Nf.z*R2.z;
+float aL2=dot(Nf.xy,L2_AXIS)*dot(R2.xy,L2_AXIS)+0.15*dot(Nf.xy,L2_PERP)*dot(R2.xy,L2_PERP)+Nf.z*R2.z;
+float aL4bar=dot(Nf.xy,L4_AXIS)*dot(R4.xy,L4_AXIS)+0.15*dot(Nf.xy,L4_PERP)*dot(R4.xy,L4_PERP)+Nf.z*R4.z;
 float faceMask=smoothstep(0.28,1.55,length(vObject.xy));
 float coreMask=mix(0.4,1.0,faceMask);
 float L0=(pow(max(aL0,0.),46.)*0.40*coreMask+pow(max(aL0,0.),20.)*0.07*faceMask)*l0Amount;
@@ -336,7 +342,7 @@ float L2=(pow(max(aL2,0.),72.)*0.44*coreMask+pow(max(aL2,0.),30.)*0.035*faceMask
 float L3raw=pow(max(dot(Nf,R3),0.),260.)*0.46*coreMask+pow(max(dot(Nf,R3),0.),75.)*0.05*faceMask;
 float L3presence=1.0-angleDip(rotAngle,122.,215.,24.)*angleDip(rotAngle,296.,40.,24.);
 float L3=L3raw*L3presence*l3Amount;
-float L4raw=pow(max(dot(Nf,R4),0.),260.)*0.46*coreMask+pow(max(dot(Nf,R4),0.),75.)*0.05*faceMask;
+float L4raw=pow(max(aL4bar,0.),260.)*0.46*coreMask+pow(max(aL4bar,0.),75.)*0.05*faceMask;
 float L4dip=angleDip(rotAngle,25.,123.,12.)*angleDip(rotAngle,200.,315.,12.);
 float L4bump=0.8*min(smoothstep(315.,325.,rotAngle),1.0-smoothstep(325.,345.,rotAngle));
 float L4=L4raw*(L4dip+L4bump)*l4Amount;
