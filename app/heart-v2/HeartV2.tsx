@@ -212,7 +212,7 @@ float noise3(vec3 p){
   float nx00=mix(n000,n100,f.x),nx10=mix(n010,n110,f.x),nx01=mix(n001,n101,f.x),nx11=mix(n011,n111,f.x);
   return mix(mix(nx00,nx10,f.y),mix(nx01,nx11,f.y),f.z);
 }
-// 1.0 outside [lo,hi] (in degrees), dipping to 0.0 inside it with a smooth `edge`-degree ramp at
+// 1.0 outside [lo,hi] (in degrees), dipping to 0.0 inside it with a smooth edge-degree ramp at
 // each boundary. Handles wraparound (hi<lo, e.g. 279 to 40 crossing 360/0) by shifting into a
 // continuous range first.
 float angleDip(float a,float lo,float hi,float edge){
