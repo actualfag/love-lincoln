@@ -223,7 +223,11 @@ void main(){
   // inset on the face, not a thin sliver hugging the silhouette.
   vec3 R0=normalize(vec3(0.549,-0.411,0.7276));
   vec3 R2=normalize(vec3(-0.60,0.55,0.58));
-  vec3 R3=normalize(vec3(0.2569,0.5150,0.8180));
+  vec3 R3=normalize(vec3(0.2569,0.02,0.8180));
+  // A separate light, at R3's original position, dedicated to the notch-crossing highlight --
+  // R3 itself was moved down to sit low/front instead (a different, also-loved effect), so one
+  // direction can no longer serve both moments in the rotation.
+  vec3 R4=normalize(vec3(0.2569,0.5150,0.8180));
   // Stretch the two round top highlights into ovals by shrinking the contribution of the axis
   // PERPENDICULAR to each light's own tangential direction -- deriving AXIS from R.xy itself
   // (rather than an arbitrary picked direction) guarantees dot(R,R)'s own perp component is
@@ -253,7 +257,8 @@ void main(){
   // Bottom bar: much higher exponent narrows it (the curved surface itself keeps it elongated
   // into a streak, so raising the exponent shrinks width without turning it back into a blob).
   float L3=pow(max(dot(Nf,R3),0.),260.)*0.46*coreMask+pow(max(dot(Nf,R3),0.),75.)*0.05*faceMask;
-  float highlight=max(max(L0,L2),L3);
+  float L4=pow(max(dot(Nf,R4),0.),260.)*0.46*coreMask+pow(max(dot(Nf,R4),0.),75.)*0.05*faceMask;
+  float highlight=max(max(max(L0,L2),L3),L4);
   // Fresnel-style rim: a soft, direction-independent floor near the curved edge (not summed
   // with the highlights above -- it only matters where no highlight already dominates).
   float rim=pow(clamp(1.0-Nf.z,0.,1.),4.5)*0.05;
@@ -294,7 +299,7 @@ float noise3s(vec3 p){
 }
 void main(){vec3 N=normalize(vN);vec3 an=abs(N);vec2 uv=an.x>an.y&&an.x>an.z?vObject.yz:(an.y>an.z?vObject.xz:vObject.xy);uv*=92.;vec2 cell=floor(uv),f=fract(uv);vec2 jitter=vec2(hash(cell),hash(cell+19.37))*.72+.14;float dotShape=1.-smoothstep(.105,.145,length(f-jitter));float rnd=hash(cell+53.19);
 vec3 Nf=vec3(N.x,N.y,abs(N.z));
-vec3 R0=normalize(vec3(0.549,-0.411,0.7276)),R2=normalize(vec3(-0.60,0.55,0.58)),R3=normalize(vec3(0.2569,0.5150,0.8180));
+vec3 R0=normalize(vec3(0.549,-0.411,0.7276)),R2=normalize(vec3(-0.60,0.55,0.58)),R3=normalize(vec3(0.2569,0.02,0.8180)),R4=normalize(vec3(0.2569,0.5150,0.8180));
 vec2 L0_AXIS=normalize(R0.xy); vec2 L0_PERP=vec2(-L0_AXIS.y,L0_AXIS.x);
 vec2 L2_AXIS=normalize(R2.xy); vec2 L2_PERP=vec2(-L2_AXIS.y,L2_AXIS.x);
 float aL0=dot(Nf.xy,L0_AXIS)*dot(R0.xy,L0_AXIS)+0.4*dot(Nf.xy,L0_PERP)*dot(R0.xy,L0_PERP)+Nf.z*R0.z;
@@ -304,7 +309,8 @@ float coreMask=mix(0.4,1.0,faceMask);
 float L0=pow(max(aL0,0.),46.)*0.40*coreMask+pow(max(aL0,0.),20.)*0.07*faceMask;
 float L2=pow(max(aL2,0.),72.)*0.44*coreMask+pow(max(aL2,0.),30.)*0.035*faceMask;
 float L3=pow(max(dot(Nf,R3),0.),260.)*0.46*coreMask+pow(max(dot(Nf,R3),0.),75.)*0.05*faceMask;
-float highlight=max(max(L0,L2),L3);
+float L4=pow(max(dot(Nf,R4),0.),260.)*0.46*coreMask+pow(max(dot(Nf,R4),0.),75.)*0.05*faceMask;
+float highlight=max(max(max(L0,L2),L3),L4);
 float rim=pow(clamp(1.0-Nf.z,0.,1.),4.5)*0.05;
 float illum=max(highlight,rim)+0.006;
 float radial=length(vec2(vObject.x/2.68,vObject.y/2.16));float edgeInset=1.0-smoothstep(0.70,0.98,radial);
