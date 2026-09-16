@@ -271,7 +271,7 @@ void main(){
   // Same overlap happens again on the opposite face, at a different angle range -- each light now
   // fades out over TWO separate windows, one per face.
   float L3raw=pow(max(dot(Nf,R3),0.),260.)*0.46*coreMask+pow(max(dot(Nf,R3),0.),75.)*0.05*faceMask;
-  float L3presence=1.0-angleDip(rotAngle,97.,215.,12.)*angleDip(rotAngle,279.,40.,12.);
+  float L3presence=1.0-angleDip(rotAngle,122.,215.,24.)*angleDip(rotAngle,296.,40.,24.);
   float L3=L3raw*L3presence;
   // L4's original window (200-315) keeps its intensity bump at 315; the new window (25-123, the
   // opposite-face occurrence) is a plain fade with no bump.
@@ -334,7 +334,7 @@ float coreMask=mix(0.4,1.0,faceMask);
 float L0=pow(max(aL0,0.),46.)*0.40*coreMask+pow(max(aL0,0.),20.)*0.07*faceMask;
 float L2=pow(max(aL2,0.),72.)*0.44*coreMask+pow(max(aL2,0.),30.)*0.035*faceMask;
 float L3raw=pow(max(dot(Nf,R3),0.),260.)*0.46*coreMask+pow(max(dot(Nf,R3),0.),75.)*0.05*faceMask;
-float L3presence=1.0-angleDip(rotAngle,97.,215.,12.)*angleDip(rotAngle,279.,40.,12.);
+float L3presence=1.0-angleDip(rotAngle,122.,215.,24.)*angleDip(rotAngle,296.,40.,24.);
 float L3=L3raw*L3presence;
 float L4raw=pow(max(dot(Nf,R4),0.),260.)*0.46*coreMask+pow(max(dot(Nf,R4),0.),75.)*0.05*faceMask;
 float L4dip=angleDip(rotAngle,25.,123.,12.)*angleDip(rotAngle,200.,315.,12.);
