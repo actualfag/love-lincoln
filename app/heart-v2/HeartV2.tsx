@@ -212,6 +212,13 @@ float noise3(vec3 p){
   float nx00=mix(n000,n100,f.x),nx10=mix(n010,n110,f.x),nx01=mix(n001,n101,f.x),nx11=mix(n011,n111,f.x);
   return mix(mix(nx00,nx10,f.y),mix(nx01,nx11,f.y),f.z);
 }
+// 1.0 outside [lo,hi] (in degrees), dipping to 0.0 inside it with a smooth `edge`-degree ramp at
+// each boundary. Handles wraparound (hi<lo, e.g. 279 to 40 crossing 360/0) by shifting into a
+// continuous range first.
+float angleDip(float a,float lo,float hi,float edge){
+  if(hi<lo){float aShift=a<hi?a+360.0:a,hiShift=hi+360.0;return 1.0-(smoothstep(lo-edge,lo,aShift)-smoothstep(hiShift,hiShift+edge,aShift));}
+  return 1.0-(smoothstep(lo-edge,lo,a)-smoothstep(hi,hi+edge,a));
+}
 void main(){
   if(length(gl_PointCoord-.5)>.47)discard;
   vec3 N=normalize(vN);
@@ -261,13 +268,15 @@ void main(){
   // Gated by ROTATION ANGLE (not by the light's own per-pixel brightness, which only reshaped the
   // falloff and clipped the good flash too): each fades out over its own angle window, with a
   // smooth ramp at the edges so the stippling fades down with it rather than cutting hard.
+  // Same overlap happens again on the opposite face, at a different angle range -- each light now
+  // fades out over TWO separate windows, one per face.
   float L3raw=pow(max(dot(Nf,R3),0.),260.)*0.46*coreMask+pow(max(dot(Nf,R3),0.),75.)*0.05*faceMask;
-  float L3presence=1.0-(smoothstep(218.,230.,rotAngle)-smoothstep(280.,292.,rotAngle));
+  float L3presence=angleDip(rotAngle,97.,215.,12.)*angleDip(rotAngle,279.,40.,12.);
   float L3=L3raw*L3presence;
-  // L4 stays hidden longer (200-315) and, instead of just returning to baseline once its window
-  // ends, gets an extra intensity bump right as it comes back in at 315.
+  // L4's original window (200-315) keeps its intensity bump at 315; the new window (25-123, the
+  // opposite-face occurrence) is a plain fade with no bump.
   float L4raw=pow(max(dot(Nf,R4),0.),260.)*0.46*coreMask+pow(max(dot(Nf,R4),0.),75.)*0.05*faceMask;
-  float L4dip=1.0-(smoothstep(188.,200.,rotAngle)-smoothstep(315.,327.,rotAngle));
+  float L4dip=angleDip(rotAngle,25.,123.,12.)*angleDip(rotAngle,200.,315.,12.);
   float L4bump=0.8*min(smoothstep(315.,325.,rotAngle),1.0-smoothstep(325.,345.,rotAngle));
   float L4=L4raw*(L4dip+L4bump);
   float highlight=max(max(max(L0,L2),L3),L4);
@@ -309,6 +318,10 @@ float noise3s(vec3 p){
   float nx00=mix(n000,n100,f.x),nx10=mix(n010,n110,f.x),nx01=mix(n001,n101,f.x),nx11=mix(n011,n111,f.x);
   return mix(mix(nx00,nx10,f.y),mix(nx01,nx11,f.y),f.z);
 }
+float angleDip(float a,float lo,float hi,float edge){
+  if(hi<lo){float aShift=a<hi?a+360.0:a,hiShift=hi+360.0;return 1.0-(smoothstep(lo-edge,lo,aShift)-smoothstep(hiShift,hiShift+edge,aShift));}
+  return 1.0-(smoothstep(lo-edge,lo,a)-smoothstep(hi,hi+edge,a));
+}
 void main(){vec3 N=normalize(vN);vec3 an=abs(N);vec2 uv=an.x>an.y&&an.x>an.z?vObject.yz:(an.y>an.z?vObject.xz:vObject.xy);uv*=92.;vec2 cell=floor(uv),f=fract(uv);vec2 jitter=vec2(hash(cell),hash(cell+19.37))*.72+.14;float dotShape=1.-smoothstep(.105,.145,length(f-jitter));float rnd=hash(cell+53.19);
 vec3 Nf=vec3(N.x,N.y,abs(N.z));
 vec3 R0=normalize(vec3(0.549,-0.411,0.7276)),R2=normalize(vec3(-0.60,0.55,0.58)),R3=normalize(vec3(0.2569,0.02,0.8180)),R4=normalize(vec3(0.2569,0.5150,0.8180));
@@ -321,10 +334,10 @@ float coreMask=mix(0.4,1.0,faceMask);
 float L0=pow(max(aL0,0.),46.)*0.40*coreMask+pow(max(aL0,0.),20.)*0.07*faceMask;
 float L2=pow(max(aL2,0.),72.)*0.44*coreMask+pow(max(aL2,0.),30.)*0.035*faceMask;
 float L3raw=pow(max(dot(Nf,R3),0.),260.)*0.46*coreMask+pow(max(dot(Nf,R3),0.),75.)*0.05*faceMask;
-float L3presence=1.0-(smoothstep(218.,230.,rotAngle)-smoothstep(280.,292.,rotAngle));
+float L3presence=angleDip(rotAngle,97.,215.,12.)*angleDip(rotAngle,279.,40.,12.);
 float L3=L3raw*L3presence;
 float L4raw=pow(max(dot(Nf,R4),0.),260.)*0.46*coreMask+pow(max(dot(Nf,R4),0.),75.)*0.05*faceMask;
-float L4dip=1.0-(smoothstep(188.,200.,rotAngle)-smoothstep(315.,327.,rotAngle));
+float L4dip=angleDip(rotAngle,25.,123.,12.)*angleDip(rotAngle,200.,315.,12.);
 float L4bump=0.8*min(smoothstep(315.,325.,rotAngle),1.0-smoothstep(325.,345.,rotAngle));
 float L4=L4raw*(L4dip+L4bump);
 float highlight=max(max(max(L0,L2),L3),L4);
