@@ -256,8 +256,13 @@ void main(){
   float L2=pow(max(aL2,0.),72.)*0.44*coreMask+pow(max(aL2,0.),30.)*0.035*faceMask;
   // Bottom bar: much higher exponent narrows it (the curved surface itself keeps it elongated
   // into a streak, so raising the exponent shrinks width without turning it back into a blob).
-  float L3=pow(max(dot(Nf,R3),0.),260.)*0.46*coreMask+pow(max(dot(Nf,R3),0.),75.)*0.05*faceMask;
-  float L4=pow(max(dot(Nf,R4),0.),260.)*0.46*coreMask+pow(max(dot(Nf,R4),0.),75.)*0.05*faceMask;
+  // Gated (not a straight value): L3 and L4 share the same x/z direction (differ only in y), so
+  // they peak at the same rotation angle on different-height points -- caught off-peak, both show
+  // up at once as flat red dots. Staying invisible until nearly white-bright avoids that.
+  float L3raw=pow(max(dot(Nf,R3),0.),260.)*0.46*coreMask+pow(max(dot(Nf,R3),0.),75.)*0.05*faceMask;
+  float L3=L3raw*smoothstep(0.09,0.13,L3raw);
+  float L4raw=pow(max(dot(Nf,R4),0.),260.)*0.46*coreMask+pow(max(dot(Nf,R4),0.),75.)*0.05*faceMask;
+  float L4=L4raw*smoothstep(0.09,0.13,L4raw);
   float highlight=max(max(max(L0,L2),L3),L4);
   // Fresnel-style rim: a soft, direction-independent floor near the curved edge (not summed
   // with the highlights above -- it only matters where no highlight already dominates).
@@ -308,8 +313,10 @@ float faceMask=smoothstep(0.28,1.55,length(vObject.xy));
 float coreMask=mix(0.4,1.0,faceMask);
 float L0=pow(max(aL0,0.),46.)*0.40*coreMask+pow(max(aL0,0.),20.)*0.07*faceMask;
 float L2=pow(max(aL2,0.),72.)*0.44*coreMask+pow(max(aL2,0.),30.)*0.035*faceMask;
-float L3=pow(max(dot(Nf,R3),0.),260.)*0.46*coreMask+pow(max(dot(Nf,R3),0.),75.)*0.05*faceMask;
-float L4=pow(max(dot(Nf,R4),0.),260.)*0.46*coreMask+pow(max(dot(Nf,R4),0.),75.)*0.05*faceMask;
+float L3raw=pow(max(dot(Nf,R3),0.),260.)*0.46*coreMask+pow(max(dot(Nf,R3),0.),75.)*0.05*faceMask;
+float L3=L3raw*smoothstep(0.09,0.13,L3raw);
+float L4raw=pow(max(dot(Nf,R4),0.),260.)*0.46*coreMask+pow(max(dot(Nf,R4),0.),75.)*0.05*faceMask;
+float L4=L4raw*smoothstep(0.09,0.13,L4raw);
 float highlight=max(max(max(L0,L2),L3),L4);
 float rim=pow(clamp(1.0-Nf.z,0.,1.),4.5)*0.05;
 float illum=max(highlight,rim)+0.006;
