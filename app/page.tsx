@@ -12,7 +12,7 @@ const rooms = [
   ['Champagne Tower','Four stories, seven-foot whirlpool, zero restraint.'],
 ];
 
-export default function Home(){return <main>
+export default function Home(){return <main className="home">
   <nav><a href="#top">TOP</a><a href="#schedule">RUN OF SHOW</a><a href="#rooms">ROOMS</a><a className="nav-rsvp" href="#rsvp">RSVP</a></nav>
 
   <header id="top" className="hero paper-grain">
