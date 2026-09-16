@@ -203,7 +203,7 @@ function makeStipplePoints(surface:THREE.BufferGeometry,count=310000){
 }
 const pointVertex=`varying vec3 vN;varying vec3 vWorld;varying vec3 vObject;varying float vSeed;attribute float seed;void main(){vSeed=seed;vObject=position;vN=normalize(mat3(modelMatrix)*normal);vec4 world=modelMatrix*vec4(position,1.);vWorld=world.xyz;gl_Position=projectionMatrix*viewMatrix*world;gl_PointSize=1.55;}`;
 const pointFragment=`
-precision highp float;varying vec3 vN;varying vec3 vWorld;varying vec3 vObject;varying float vSeed;uniform float redDensity;uniform float whiteAmount;
+precision highp float;varying vec3 vN;varying vec3 vWorld;varying vec3 vObject;varying float vSeed;uniform float redDensity;uniform float whiteAmount;uniform float rotAngle;
 float hash3(vec3 p){return fract(sin(dot(p,vec3(12.9898,78.233,45.164)))*43758.5453);}
 float noise3(vec3 p){
   vec3 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);
@@ -256,13 +256,20 @@ void main(){
   float L2=pow(max(aL2,0.),72.)*0.44*coreMask+pow(max(aL2,0.),30.)*0.035*faceMask;
   // Bottom bar: much higher exponent narrows it (the curved surface itself keeps it elongated
   // into a streak, so raising the exponent shrinks width without turning it back into a blob).
-  // Gated (not a straight value): L3 and L4 share the same x/z direction (differ only in y), so
-  // they peak at the same rotation angle on different-height points -- caught off-peak, both show
-  // up at once as flat red dots. Staying invisible until nearly white-bright avoids that.
+  // L3 and L4 share the same x/z direction (differ only in y), so they peak at the same rotation
+  // angle on different-height points -- caught off-peak, both show up at once as flat red dots.
+  // Gated by ROTATION ANGLE (not by the light's own per-pixel brightness, which only reshaped the
+  // falloff and clipped the good flash too): each fades out over its own angle window, with a
+  // smooth ramp at the edges so the stippling fades down with it rather than cutting hard.
   float L3raw=pow(max(dot(Nf,R3),0.),260.)*0.46*coreMask+pow(max(dot(Nf,R3),0.),75.)*0.05*faceMask;
-  float L3=L3raw*smoothstep(0.09,0.13,L3raw);
+  float L3presence=1.0-(smoothstep(218.,230.,rotAngle)-smoothstep(280.,292.,rotAngle));
+  float L3=L3raw*L3presence;
+  // L4 stays hidden longer (200-315) and, instead of just returning to baseline once its window
+  // ends, gets an extra intensity bump right as it comes back in at 315.
   float L4raw=pow(max(dot(Nf,R4),0.),260.)*0.46*coreMask+pow(max(dot(Nf,R4),0.),75.)*0.05*faceMask;
-  float L4=L4raw*smoothstep(0.09,0.13,L4raw);
+  float L4dip=1.0-(smoothstep(188.,200.,rotAngle)-smoothstep(315.,327.,rotAngle));
+  float L4bump=0.8*min(smoothstep(315.,325.,rotAngle),1.0-smoothstep(325.,345.,rotAngle));
+  float L4=L4raw*(L4dip+L4bump);
   float highlight=max(max(max(L0,L2),L3),L4);
   // Fresnel-style rim: a soft, direction-independent floor near the curved edge (not summed
   // with the highlights above -- it only matters where no highlight already dominates).
@@ -292,7 +299,7 @@ void main(){
   else discard;
 }`;
 const surfaceVertex=`varying vec3 vN;varying vec3 vWorld;varying vec3 vObject;void main(){vObject=position;vN=normalize(mat3(modelMatrix)*normal);vec4 world=modelMatrix*vec4(position,1.);vWorld=world.xyz;gl_Position=projectionMatrix*viewMatrix*world;}`;
-const surfaceFragment=`precision highp float;varying vec3 vN;varying vec3 vWorld;varying vec3 vObject;uniform float redDensity;uniform float whiteAmount;
+const surfaceFragment=`precision highp float;varying vec3 vN;varying vec3 vWorld;varying vec3 vObject;uniform float redDensity;uniform float whiteAmount;uniform float rotAngle;
 float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453123);}
 float hash3s(vec3 p){return fract(sin(dot(p,vec3(12.9898,78.233,45.164)))*43758.5453);}
 float noise3s(vec3 p){
@@ -314,9 +321,12 @@ float coreMask=mix(0.4,1.0,faceMask);
 float L0=pow(max(aL0,0.),46.)*0.40*coreMask+pow(max(aL0,0.),20.)*0.07*faceMask;
 float L2=pow(max(aL2,0.),72.)*0.44*coreMask+pow(max(aL2,0.),30.)*0.035*faceMask;
 float L3raw=pow(max(dot(Nf,R3),0.),260.)*0.46*coreMask+pow(max(dot(Nf,R3),0.),75.)*0.05*faceMask;
-float L3=L3raw*smoothstep(0.09,0.13,L3raw);
+float L3presence=1.0-(smoothstep(218.,230.,rotAngle)-smoothstep(280.,292.,rotAngle));
+float L3=L3raw*L3presence;
 float L4raw=pow(max(dot(Nf,R4),0.),260.)*0.46*coreMask+pow(max(dot(Nf,R4),0.),75.)*0.05*faceMask;
-float L4=L4raw*smoothstep(0.09,0.13,L4raw);
+float L4dip=1.0-(smoothstep(188.,200.,rotAngle)-smoothstep(315.,327.,rotAngle));
+float L4bump=0.8*min(smoothstep(315.,325.,rotAngle),1.0-smoothstep(325.,345.,rotAngle));
+float L4=L4raw*(L4dip+L4bump);
 float highlight=max(max(max(L0,L2),L3),L4);
 float rim=pow(clamp(1.0-Nf.z,0.,1.),4.5)*0.05;
 float illum=max(highlight,rim)+0.006;
@@ -336,7 +346,7 @@ export default function HeartV2({mode="points",showControls=true,embedded=false,
   // the camera -- then turns through to "Love, Lincoln" (angle 0/360) as the second face.
   const mount=useRef<HTMLDivElement>(null), playing=useRef(true), speedRef=useRef(17), angleRef=useRef(180);
   const [isPlaying,setPlaying]=useState(true),[angle,setAngle]=useState(180),[density,setDensity]=useState(0.5),[white,setWhite]=useState(1.2);
-  const uniforms=useRef({redDensity:{value:0.5},whiteAmount:{value:1.2}});
+  const uniforms=useRef({redDensity:{value:0.5},whiteAmount:{value:1.2},rotAngle:{value:180}});
   useEffect(()=>{playing.current=isPlaying},[isPlaying]); useEffect(()=>{uniforms.current.redDensity.value=density},[density]); useEffect(()=>{uniforms.current.whiteAmount.value=white},[white]);
   useEffect(()=>{
     const host=mount.current!; const scene=new THREE.Scene(); scene.background=BLACK;
@@ -405,6 +415,7 @@ export default function HeartV2({mode="points",showControls=true,embedded=false,
     window.addEventListener("resize",resize,{passive:true});
     let previous=performance.now(),raf=0,lastUi=0;
     const draw=(now:number)=>{const dt=(now-previous)/1000;previous=now;if(playing.current)angleRef.current=(angleRef.current+speedRef.current*dt)%360;group.rotation.y=THREE.MathUtils.degToRad(-angleRef.current);
+      uniforms.current.rotAngle.value=angleRef.current;
       renderer.render(scene,camera);if(now-lastUi>80){setAngle(Math.round(angleRef.current));lastUi=now}raf=requestAnimationFrame(draw)};raf=requestAnimationFrame(draw);
     return()=>{cancelAnimationFrame(raf);cancelAnimationFrame(resizeFrame);window.clearTimeout(settleResize);window.removeEventListener("resize",resize);renderer.dispose();heartGeometry.dispose();heartMaterial.dispose();pointMaterial?.dispose();host.removeChild(renderer.domElement)};
   },[mode,scale]);
